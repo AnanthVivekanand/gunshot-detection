@@ -21,7 +21,6 @@ import torch.nn as nn
 # device_info = sd.query_devices()
 # print(device_info)
 
-
 class MobileNetV3(nn.Module):
   def __init__(self):
     super(MobileNetV3, self).__init__()
@@ -47,18 +46,21 @@ class listener:
 
     model = MobileNetV3()
 
-    def __init__(self):
+    def __init__(self, API_instance):
         self.model.load_state_dict(torch.load("model_assets/model_2.pt", map_location=torch.device('cpu')))
-
         self.model.eval()
 
+        self.API = API_instance
+
         t = threading.Thread(target=self.record_audio, args=(self.audio,self.threads))
+        t.daemon = True
         self.threads.append(t)
         t.start()
 
     def manage_api(self, classification, threads):
-        self.classifications.append(classification.squeeze().tolist())
-        print(self.classifications)
+        # self.classifications.append(classification.squeeze().tolist())
+        # print(self.classifications)
+        self.API.new_classification(classification.squeeze().tolist())
         return
 
     def run_model(self, spec, threads):
@@ -86,22 +88,21 @@ class listener:
         spec = self.normalize.forward(spec) 
         spec = spec.unsqueeze(0)
         
+        #if not stop_threads:
         self.threads.append(threading.Thread(target=self.run_model, args=(spec,threads)).start())
 
     def record_audio(self, audio, threads):
         print("Recording audio...")
         sd.rec(samplerate=self.fs, out=audio)
         sd.wait()
-        global stop_threads
-        if self.stop_threads:
-            return
-        self.threads.append(threading.Thread(target=self.preprocesses_audio, args=(self.audio,self.threads)).start())
-        self.threads.append(threading.Thread(target=self.record_audio, args=(self.audio,self.threads)).start())
 
-l = listener()
-
-try:
-    while 1:
-        time.sleep(.1)
-except KeyboardInterrupt:
-    l.stop_threads = True
+        if not self.stop_threads:
+            t = threading.Thread(target=self.preprocesses_audio, args=(self.audio,self.threads))
+            t.daemon = True
+            self.threads.append(t)
+            t.start()
+            
+            t = threading.Thread(target=self.record_audio, args=(self.audio,self.threads))
+            t.daemon = True
+            self.threads.append(t)
+            t.start()

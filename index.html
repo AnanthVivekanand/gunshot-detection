@@ -6,22 +6,22 @@
     <script>
         let socket = new WebSocket("ws://localhost:8000");
         socket.onopen = function(e) {
-  alert("[open] Connection established");
-  alert("Sending to server");
-  socket.send("This is a test message that should be echoed back");
+  console.log("[open] Connection established");
+  console.log("Sending to server");
+  socket.send("new_connection");
 };
 
 socket.onmessage = function(event) {
-  alert(`[message] Data received from server: ${event.data}`);
+  console.log(`[message] Data received from server: ${event.data}`);
 };
 
 socket.onclose = function(event) {
   if (event.wasClean) {
-    alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+    console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
   } else {
     // e.g. server process killed or network down
     // event.code is usually 1006 in this case
-    alert('[close] Connection died');
+    console.log('[close] Connection died');
   }
 };
 

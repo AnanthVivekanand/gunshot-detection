@@ -1,6 +1,8 @@
 from simple_websocket_server import WebSocketServer, WebSocket
+import threading
+import json
 
-class API(WebSocket):
+class Handler(WebSocket):
     classifications = []
 
     def handle(self):
@@ -14,6 +16,24 @@ class API(WebSocket):
     def handle_close(self):
         print(self.address, 'closed')
 
+    def new_classification(self, c):
+        self.classifications.append(c)
+        self.send_message(json.dumps(c))
 
-server = WebSocketServer('', 8000, API)
-server.serve_forever()
+class API(WebSocketServer):
+    
+    stop_threads = False        
+
+    def __init__(self):
+        super().__init__('', 8000, Handler)
+        t = threading.Thread(target=self.serve_forever)
+        t.daemon = True
+        t.start()
+    
+    def new_classification(self, c):
+        for handler in list(self.connections.values()):
+            handler.new_classification(c)
+
+#server = WebSocketServer('', 8000, Handler)
+#print(server.connections)
+#server.serve_forever()
