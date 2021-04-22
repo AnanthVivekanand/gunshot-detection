@@ -7,11 +7,14 @@ class Handler(WebSocket):
 
     def handle(self):
         # echo message back to client
-        self.send_message(self.data)
+        # self.send_message(self.data)
+        return
 
     def connected(self):
         print(self.address, 'connected')
-        self.send_message("PING")
+        self.send_message(json.dumps({
+            "status": "PING"
+        }))
 
     def handle_close(self):
         print(self.address, 'closed')

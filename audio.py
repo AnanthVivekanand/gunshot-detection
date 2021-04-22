@@ -17,9 +17,9 @@ import time
 import torchvision.models as models
 import torch.nn as nn
 
-# print(sd.default.device)
-# device_info = sd.query_devices()
-# print(device_info)
+print(sd.default.device)
+device_info = sd.query_devices()
+print(device_info)
 
 class MobileNetV3(nn.Module):
   def __init__(self):
@@ -60,15 +60,28 @@ class listener:
     def manage_api(self, classification, threads):
         # self.classifications.append(classification.squeeze().tolist())
         # print(self.classifications)
-        self.API.new_classification(classification.squeeze().tolist())
+        self.API.new_classification({
+            "status": "classification",
+            "data":classification.squeeze().tolist()
+        })
         return
 
     def run_model(self, spec, threads):
+        print('Running model...')
         with torch.no_grad():
             self.threads.append(threading.Thread(target=self.manage_api, args=(self.model(spec),self.threads)).start())
 
     def preprocesses_audio(self, audio, threads):
         print("Preprocessing audio...")
+
+        # test for silence
+        # if audio.std() < 0.031:
+        #    self.API.new_classification({
+        #       "status": "silence",
+        #       "data": [-1]  
+        # })
+        #    return
+        
         soundData = torch.mean(torch.from_numpy(audio), dim=1, keepdim=True)
         soundData = torch.transpose(soundData, 0, 1).float()
         num_channels = 3
