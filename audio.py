@@ -41,6 +41,8 @@ class listener:
     normalize = torchvision.transforms.Normalize(mean=[-2.0064, -1.2480, -0.4483], std=[3.9764, 3.9608, 3.9427], inplace=False)
 
     classifications = []
+    raw_samples = {}
+
     stop_threads = False        
     threads = []
 
@@ -60,10 +62,12 @@ class listener:
     def manage_api(self, classification, threads):
         # self.classifications.append(classification.squeeze().tolist())
         # print(self.classifications)
-        self.API.new_classification({
-            "status": "classification",
-            "data":classification.squeeze().tolist()
-        })
+        classification = classification.squeeze()
+        if (classification.min() < 0):
+            classification -= classification.min() - 0.2
+            classification = classification / classification.sum()
+
+        self.API.new_classification(classification.squeeze().tolist())
         return
 
     def run_model(self, spec, threads):
@@ -108,6 +112,8 @@ class listener:
         print("Recording audio...")
         sd.rec(samplerate=self.fs, out=audio)
         sd.wait()
+
+        self.raw_samples[len(list(self.raw_samples.keys()))] = self.audio.copy()
 
         if not self.stop_threads:
             t = threading.Thread(target=self.preprocesses_audio, args=(self.audio,self.threads))

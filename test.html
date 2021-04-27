@@ -115,12 +115,22 @@
           else if (msg.status == "classification") {
             classificationOverTime.data.datasets[0].data = msg.data;
           classificationOverTime.update();
+          if (window.classifications == undefined) {
+            window.classifications = []
+          }
+          window.classifications.push(msg.data)
+          }
+          else if (msg.status == "past_classifications") {
+            window.classifications = msg.data;
           }
           else if (msg.status == "silence") {
             console.log("SILENCE")
           }
           else if (msg.status == "new_connection") {
             console.log("CONNECTION INITIATED")
+          }
+          else if (msg.status == "classification_count") {
+            console.log(msg.data)
           }
         }
       } catch (e) {
