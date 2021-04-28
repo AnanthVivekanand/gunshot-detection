@@ -316,7 +316,7 @@
                     <!-- <h4 class="small font-weight-bold">
                       CPU Utilization<span class="float-right"><span id="cpu_utilization">20</span>%</span>
                     </h4> -->
-                    
+                    <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                           <tr>
@@ -348,7 +348,7 @@
                           -->
                         </tbody>
                       </table>
-
+                    </div>
                   </div>
                 </div>
 
@@ -536,6 +536,7 @@
     <!-- <script src="js/demo/chart-pie-demo.js"></script> -->
 
     <script>
+        print = console.log
       window.events = {
         0: "Air Conditioner",
         1: "Car Horn",
@@ -552,6 +553,15 @@
         '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
       Chart.defaults.global.defaultFontColor = "#858796";
       window.queued_classifications = [];
+      function loadAudio(buttonElement) {
+          event = buttonElement.getAttribute("event")
+          socket.send(JSON.stringify({"status": "event_audio_request", "data": event}))
+      }
+      function addAudioFileTable(data) {
+          table = document.getElementById("gunshot_table")
+          table.children[Object.keys(detected_gunshots).indexOf("" + data[0])].children[3].innerHTML = '<audio controls="controls"><source src="' + data[1] + '" type="audio/mpeg"> </audio>'  
+        
+      }
       function updateTable() {
           table = document.getElementById("gunshot_table")
           i = 0
@@ -567,13 +577,44 @@
                 i++;
             } 
           }
-          console.log(detected_gunshots)
+          // console.log(detected_gunshots)
+          num_of_rows_in_table = table.children.length
+          num_of_needed_rows = Object.keys(detected_gunshots).length
+          if (num_of_needed_rows > num_of_rows_in_table) {
+              for (i = num_of_rows_in_table; i < num_of_needed_rows; i++) {
+                table.innerHTML += '<tr status="uninitialized"><th scope="row">...</th><td>...</td><td>...</td><td>...</td></tr>';
+              }
+          } 
+          i = 0
+          for (row of table.children) {
+              if (i > Object.keys(detected_gunshots).length) {
+                  break;
+              }
+              if (row.getAttribute("status") == "uninitialized") {
+                  // we need to initialize this row
+                  event = detected_gunshots[Object.keys(detected_gunshots)[i]]
+                  if(event == undefined) {
+                      break;
+                  }
+                  row.children[0].innerHTML = event["time"]
+                  row.children[1].innerHTML = event["confidence"]
+                  row.children[2].innerHTML = '<a class="btn btn-secondary btn-icon-split" event="' + Object.keys(detected_gunshots)[i] + '"><span class="icon text-white-50"><i class="fas fa-arrow-right"></i></span><span class="text">Load Audio</span></a>'
+                  row.children[2].children[0].addEventListener('click', function(e) {
+                      loadAudio(e.srcElement.parentElement)
+                  })
+                  i++
+              }
+          }
       }
       function updateClassificationCount() {
         var ctx = document.getElementById("num_classifications");
         ctx.innerHTML = window.classifications.length + window.queued_classifications.length;
       }
       function updateCommonAudioEvent() {
+        if (window.classification == undefined || window.classifications.length < 1) {
+            return;
+        }
+
         eventCounts = {};
 
         for (x of window.classifications) {
@@ -672,7 +713,7 @@ var classificationPieChart = new Chart(ctx, {
       socket.onopen = function (e) {
         console.log("[open] Connection established");
         console.log("Sending to server");
-        socket.send("new_connection");
+        socket.send(JSON.stringify({"status": "new_connection"}));
       };
 
       socket.onmessage = function (event) {
@@ -725,6 +766,8 @@ var classificationPieChart = new Chart(ctx, {
               console.log(msg.data);
             } else if (msg.status == "device_status") {
                 updateDeviceStat(msg.data);
+            } else if (msg.status == "audio_file") {
+                addAudioFileTable(msg.data)
             }
           }
         } catch (e) {

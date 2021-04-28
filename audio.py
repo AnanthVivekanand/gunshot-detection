@@ -41,7 +41,6 @@ class listener:
     normalize = torchvision.transforms.Normalize(mean=[-2.0064, -1.2480, -0.4483], std=[3.9764, 3.9608, 3.9427], inplace=False)
 
     classifications = []
-    raw_samples = {}
 
     stop_threads = False        
     threads = []
@@ -113,7 +112,7 @@ class listener:
         sd.rec(samplerate=self.fs, out=audio)
         sd.wait()
 
-        self.raw_samples[len(list(self.raw_samples.keys()))] = self.audio.copy()
+        self.API.new_sample(self.audio.copy())
 
         if not self.stop_threads:
             t = threading.Thread(target=self.preprocesses_audio, args=(self.audio,self.threads))
