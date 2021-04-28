@@ -10,8 +10,8 @@ import sounddevice as sd
 import numpy as np
 import threading
 import torch
-import torchaudio
-import torchvision
+import librosa
+import torchvision, torchaudio
 import time
 
 import torchvision.models as models
@@ -34,7 +34,7 @@ class MobileNetV3(nn.Module):
 
 class listener:
     duration = 4.0
-    fs = 22050
+    fs = 44100
     sd.default.samplerate = fs
     duration = 4  # seconds
     audio = np.zeros((fs*duration, 1))
@@ -87,6 +87,8 @@ class listener:
         
         soundData = torch.mean(torch.from_numpy(audio), dim=1, keepdim=True)
         soundData = torch.transpose(soundData, 0, 1).float()
+        soundData = soundData.numpy().flatten()
+        soundData = librosa.resample(soundData, 44100, 22050)
         num_channels = 3
 
         specs = []
@@ -94,10 +96,27 @@ class listener:
             sr = 22050
             window_length = int(round(([25, 50, 100][i])*sr/1000))
             hop_length = int(round(([10, 25, 50][i])*sr/1000))
+    
+            spec = librosa.feature.melspectrogram(
+                soundData,
+                sr=22050,
+                n_fft=2205,
+                hop_length=hop_length,
+                win_length=window_length,
+                center=True,
+                pad_mode="reflect",
+                power=2.0,
+                n_mels=128,
+                norm=None,
+                htk=True,
+            )
+            spec = np.expand_dims(spec, axis=0)
+            #print(spec.shape)
+            #spec = torchaudio.transforms.MelSpectrogram(sample_rate=22050, n_fft=2205, win_length=window_length, hop_length=hop_length, n_mels=128)(soundData)
+            #print(spec.size())
 
-            spec = torchaudio.transforms.MelSpectrogram(sample_rate=22050, n_fft=2205, win_length=window_length, hop_length=hop_length, n_mels=128)(soundData)
             eps = 1e-6
-            spec = torch.log(spec + eps)
+            spec = torch.log(torch.from_numpy(spec) + eps)
             spec = torchvision.transforms.Resize((128, 250))(spec)
             specs.append(torch.squeeze(spec))
         spec = torch.stack(specs)

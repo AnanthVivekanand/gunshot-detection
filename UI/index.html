@@ -611,10 +611,9 @@
         ctx.innerHTML = window.classifications.length + window.queued_classifications.length;
       }
       function updateCommonAudioEvent() {
-        if (window.classification == undefined || window.classifications.length < 1) {
+        if (window.classifications == undefined || window.classifications.length < 1) {
             return;
         }
-
         eventCounts = {};
 
         for (x of window.classifications) {
