@@ -11,7 +11,7 @@ import numpy as np
 import threading
 import torch
 import librosa
-import torchvision, torchaudio
+import torchvision
 import time
 
 import torchvision.models as models
@@ -59,12 +59,19 @@ class listener:
         t.start()
 
     def manage_api(self, classification, threads):
-        # self.classifications.append(classification.squeeze().tolist())
-        # print(self.classifications)
-        classification = classification.squeeze()
+        classification = classification.squeeze().tolist()
+        c = []
+        for x in classification:
+            if x < 0:
+                c.append(-np.log(np.abs(x)))
+            else:
+                c.append(x)
+        
+        classification = np.array(c)
         if (classification.min() < 0):
-            classification -= classification.min() - 0.2
-            classification = classification / classification.sum()
+            classification -= classification.min() - 0.01
+
+        classification = classification / classification.sum() 
 
         self.API.new_classification(classification.squeeze().tolist())
         return

@@ -708,7 +708,7 @@ var classificationPieChart = new Chart(ctx, {
   },
 });
 
-      let socket = new WebSocket("ws://localhost:8000");
+      let socket = new WebSocket("ws://" + window.location.hostname +  ":8000");
       socket.onopen = function (e) {
         console.log("[open] Connection established");
         console.log("Sending to server");
