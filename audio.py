@@ -85,12 +85,13 @@ class listener:
         print("Preprocessing audio...")
 
         # test for silence
-        # if audio.std() < 0.031:
-        #    self.API.new_classification({
-        #       "status": "silence",
-        #       "data": [-1]  
-        # })
-        #    return
+        print(audio.std())
+        if audio.std() < 0.006:
+            self.API.new_classification({
+               "status": "silence",
+               "data": [-1]  
+            })
+            return
         
         soundData = torch.mean(torch.from_numpy(audio), dim=1, keepdim=True)
         soundData = torch.transpose(soundData, 0, 1).float()
